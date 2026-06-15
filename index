@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generator Angket Minat Siswa</title>
+<style>
+  :root{
+    --ink:#1f2a44;
+    --muted:#5b6675;
+    --paper:#eef1f5;
+    --surface:#ffffff;
+    --line:#dde2e9;
+    --line-soft:#e9edf2;
+    --accent:#2f5d8a;
+    --accent-dark:#244a6f;
+    --mudah:#2e7d57;
+    --mudah-bg:#e7f3ec;
+    --sedang:#9a6a12;
+    --sedang-bg:#f6eed8;
+    --tinggi:#b3492e;
+    --tinggi-bg:#f6e4dd;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(31,42,68,.06),0 8px 24px rgba(31,42,68,.06);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:var(--paper);
+    line-height:1.55;
+    font-size:15px;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:28px 20px 80px}
+  header.page{margin-bottom:22px}
+  .eyebrow{
+    font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--accent);font-weight:700;margin:0 0 6px
+  }
+  h1{font-size:27px;line-height:1.15;margin:0 0 8px;letter-spacing:-.01em}
+  .lede{color:var(--muted);max-width:62ch;margin:0;font-size:14.5px}
+
+  .card{
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:22px;margin-bottom:20px
+  }
+  .card h2{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:0 0 16px;font-weight:700}
+
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field.full{grid-column:1/-1}
+  label{font-size:13px;font-weight:600;color:var(--ink)}
+  .hint{font-size:12px;color:var(--muted);font-weight:400}
+  input[type=text],select{
+    font:inherit;color:var(--ink);background:#fff;
+    border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%
+  }
+  input[type=text]:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .extra{display:none}
+  .extra.show{display:block}
+
+  .scale-note{
+    grid-column:1/-1;background:var(--paper);border:1px dashed var(--line);
+    border-radius:8px;padding:12px 14px;font-size:13px;color:var(--muted)
+  }
+  .scale-note strong{color:var(--ink)}
+  .scale-note .pts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .scale-note .pt{background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12.5px;color:var(--ink)}
+  .scale-note .pt b{color:var(--accent)}
+
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  button{
+    font:inherit;font-weight:600;cursor:pointer;border-radius:8px;
+    padding:10px 16px;border:1px solid var(--line);background:#fff;color:var(--ink);
+    transition:transform .04s ease,background .15s ease,border-color .15s ease
+  }
+  button:hover{border-color:var(--accent)}
+  button:active{transform:translateY(1px)}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.primary:hover{background:var(--accent-dark);border-color:var(--accent-dark)}
+  button.ghost{background:transparent}
+  button:disabled{opacity:.45;cursor:not-allowed}
+
+  .alert{
+    border-radius:8px;padding:10px 13px;font-size:13.5px;margin-top:14px;display:none
+  }
+  .alert.err{display:block;background:#fbe9e6;border:1px solid #e6b6ab;color:#8a2e1a}
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:13.5px;
+    opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;z-index:50
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  #output{display:none}
+  #output.show{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .meta{display:flex;flex-wrap:wrap;gap:18px 28px;margin-bottom:8px}
+  .meta div{font-size:13px}
+  .meta .k{color:var(--muted);font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;font-weight:700}
+  .meta .v{font-weight:600;color:var(--ink)}
+
+  .table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius)}
+  table{border-collapse:collapse;width:100%;min-width:880px;font-size:13.5px}
+  thead th{
+    background:var(--accent);color:#fff;text-align:left;padding:10px 12px;
+    font-size:12px;letter-spacing:.02em;font-weight:600;position:sticky;top:0;white-space:nowrap
+  }
+  tbody td{padding:10px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  tbody tr:nth-child(even){background:#fafbfc}
+  td.no{font-variant-numeric:tabular-nums;color:var(--muted);text-align:right;width:34px}
+  td.statement{min-width:240px;color:var(--ink)}
+  td.note{min-width:230px;color:var(--muted);font-size:12.5px}
+  td.dim{white-space:nowrap;font-weight:600}
+
+  .pill{display:inline-block;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;letter-spacing:.01em}
+  .pill.mudah{background:var(--mudah-bg);color:var(--mudah)}
+  .pill.sedang{background:var(--sedang-bg);color:var(--sedang)}
+  .pill.tinggi{background:var(--tinggi-bg);color:var(--tinggi)}
+  .arah{font-size:12.5px;color:var(--muted);white-space:nowrap}
+
+  .legend{display:flex;flex-wrap:wrap;gap:10px 18px;margin:14px 2px 2px;font-size:12.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+  .narrative{
+    margin-top:20px;border-left:3px solid var(--accent);background:var(--paper);
+    border-radius:0 8px 8px 0;padding:14px 18px
+  }
+  .narrative h3{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .narrative p{margin:0 0 10px;font-size:13.5px;color:var(--ink)}
+  .narrative p:last-child{margin-bottom:0;color:var(--muted)}
+
+  footer.fine{margin-top:26px;font-size:12px;color:var(--muted);text-align:center}
+
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    h1{font-size:23px}
+    .wrap{padding:20px 14px 64px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <p class="eyebrow">Penyusunan Instrumen · Skala Likert</p>
+    <h1>Generator Angket Minat Siswa</h1>
+    <p class="lede">Membantu guru dan mahasiswa menyusun <em>draft</em> angket minat belajar siswa SD. Butir disusun atas empat dimensi minat dengan tiga tingkat kemungkinan persetujuan  mudah, sedang, dan tinggi. Hasil yang digenerate program masih perlu ditelaah kembali, diedit bila diperlukan, divalidasi oleh ahli, serta diuji secara empiris sebelum digunakan dalam penelitian.</p>
+  </header>
+
+  <section class="card" aria-label="Pengaturan angket">
+    <h2>Pengaturan</h2>
+    <div class="grid">
+
+      <div class="field">
+        <label for="mapel">Mata pelajaran</label>
+        <select id="mapel">
+          <option value="Matematika">Matematika</option>
+          <option value="IPA">IPA</option>
+          <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+          <option value="IPS">IPS</option>
+          <option value="PPKn">PPKn</option>
+          <option value="SBdP">SBdP</option>
+          <option value="PJOK">PJOK</option>
+          <option value="__lain__">Lainnya…</option>
+        </select>
+        <input type="text" id="mapelLain" class="extra" placeholder="Tulis nama mata pelajaran">
+      </div>
+
+      <div class="field">
+        <label for="kelas">Kelas siswa</label>
+        <input type="text" id="kelas" value="IV SD" placeholder="mis. IV SD">
+      </div>
+
+      <div class="field">
+        <label for="objek">Materi pembelajaran</label>
+        <input type="text" id="objek" placeholder="mis. bangun datar, pecahan, sumber energi">
+        <span class="hint">Opsional. Mengisi placeholder [MATERI] pada kalimat. Bila kosong, dirujuk ke mata pelajaran.</span>
+      </div>
+
+      <div class="field">
+        <label for="jumlah">Jumlah butir</label>
+        <select id="jumlah">
+          <option value="12">12 butir</option>
+          <option value="24" selected>24 butir</option>
+          <option value="30">30 butir</option>
+        </select>
+        <span class="hint">Dibagi merata ke 4 dimensi × 3 tingkat.</span>
+      </div>
+
+      <div class="scale-note">
+        <strong>Skala jawaban</strong> — 4 tingkat (default):
+        <div class="pts">
+          <span class="pt"><b>4</b> Sangat Setuju</span>
+          <span class="pt"><b>3</b> Setuju</span>
+          <span class="pt"><b>2</b> Tidak Setuju</span>
+          <span class="pt"><b>1</b> Sangat Tidak Setuju</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="btnGenerate">Generate Angket</button>
+      <button id="btnCopy" disabled>Salin ke Clipboard</button>
+      <button id="btnCsv" disabled>Unduh CSV</button>
+      <button id="btnDoc" disabled>Unduh Word/HTML</button>
+      <button class="ghost" id="btnReset">Reset</button>
+    </div>
+
+    <div class="alert err" id="errBox" role="alert"></div>
+  </section>
+
+  <section id="output" aria-live="polite">
+    <div class="card">
+      <h2>Hasil Draft Angket</h2>
+      <div class="meta" id="metaBox"></div>
+
+      <div class="table-scroll">
+        <table id="angketTable">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Dimensi</th>
+              <th>Indikator</th>
+              <th>Tingkat Butir</th>
+              <th>Pernyataan Angket</th>
+              <th>Arah Butir</th>
+              <th>Catatan Kualitas Butir</th>
+            </tr>
+          </thead>
+          <tbody id="angketBody"></tbody>
+        </table>
+      </div>
+
+      <div class="legend">
+        <span><i class="dot" style="background:var(--mudah)"></i> Mudah disetujui — pernyataan umum &amp; ringan</span>
+        <span><i class="dot" style="background:var(--sedang)"></i> Sedang — minat yang lebih nyata</span>
+        <span><i class="dot" style="background:var(--tinggi)"></i> Tinggi — minat kuat (tetap tertarik meski sulit)</span>
+      </div>
+
+      <div class="narrative">
+        <h3>Catatan instrumen</h3>
+        <p>Angket ini merupakan draft awal. Kualitas instrumen tetap perlu diuji melalui uji coba kepada siswa. Reliabilitas, separation, item fit, dan fungsi kategori jawaban perlu dianalisis sebelum angket digunakan sebagai instrumen final.</p>
+        <p>Tingkat <em>mudah</em>, <em>sedang</em>, dan <em>tinggi</em> di sini bukan tingkat kesulitan soal, melainkan tingkat kemungkinan siswa menyetujui pernyataan. Validitas isi, reliabilitas, separasi, dan kecocokan butir sebaiknya diuji dengan data responden, misalnya melalui analisis Rasch (mis. dengan RASA).</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="fine">Berjalan sepenuhnya di browser · tanpa server · data tidak dikirim ke mana pun.</footer>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ---------- Data dimensi, indikator, dan bank pernyataan (100 template) ---------- */
+/* Placeholder yang dikenali:
+   [MATA_PELAJARAN] = nama mata pelajaran
+   [MATERI]         = materi/topik (jika kosong, dirujuk ke mata pelajaran)
+   [GURU]           = "guru"
+   [TEMAN]          = "teman" */
+
+const DIMENSI = [
+  {
+    nama: "Perasaan Senang",
+    indikator: { mudah:"Menyukai pelajaran", sedang:"Menikmati proses belajar", tinggi:"Tetap senang dalam kondisi sulit" },
+    butir: {
+      mudah: [
+        "Saya senang mengikuti pelajaran [MATA_PELAJARAN].",
+        "Saya suka belajar [MATA_PELAJARAN] di kelas.",
+        "Belajar [MATERI] membuat saya senang.",
+        "Saya senang saat [GURU] mulai mengajar [MATA_PELAJARAN].",
+        "Saya merasa senang ketika membahas [MATERI].",
+        "Saya suka saat kelas belajar [MATERI].",
+        "Saya menikmati pelajaran [MATA_PELAJARAN].",
+        "Saya senang jika hari ini ada pelajaran [MATA_PELAJARAN].",
+        "Saya merasa nyaman saat belajar [MATA_PELAJARAN]."
+      ],
+      sedang: [
+        "Saya tetap senang belajar [MATA_PELAJARAN] walaupun materinya cukup sulit.",
+        "Saya merasa senang ketika berhasil memahami [MATERI].",
+        "Saya tetap menikmati pelajaran [MATA_PELAJARAN] meskipun harus berpikir lebih keras.",
+        "Saya senang mencoba memahami [MATERI] sedikit demi sedikit.",
+        "Saya merasa puas ketika dapat menyelesaikan latihan [MATERI].",
+        "Saya tetap suka belajar [MATA_PELAJARAN] meskipun ada bagian yang belum saya pahami.",
+        "Saya senang jika [GURU] memberi contoh baru tentang [MATERI].",
+        "Saya merasa belajar [MATERI] menjadi menyenangkan ketika dikerjakan bersama [TEMAN]."
+      ],
+      tinggi: [
+        "Saya tetap senang belajar [MATA_PELAJARAN] meskipun soal yang diberikan sulit.",
+        "Saya tetap menikmati belajar [MATERI] walaupun perlu mengulang beberapa kali.",
+        "Saya merasa senang ketika berhasil memahami bagian [MATERI] yang awalnya sulit.",
+        "Saya tetap bersemangat mengikuti pelajaran [MATA_PELAJARAN] sampai selesai.",
+        "Saya merasa tertantang saat belajar [MATERI] yang lebih sulit.",
+        "Saya tetap suka belajar [MATA_PELAJARAN] meskipun pernah salah menjawab.",
+        "Saya senang mencoba lagi ketika belum berhasil memahami [MATERI].",
+        "Saya tetap merasa senang saat harus berlatih soal [MATERI] lebih banyak."
+      ]
+    }
+  },
+  {
+    nama: "Ketertarikan",
+    indikator: { mudah:"Tertarik pada materi/penyajian", sedang:"Ingin tahu lebih dalam", tinggi:"Mencari pengetahuan tambahan mandiri" },
+    butir: {
+      mudah: [
+        "Saya tertarik belajar [MATERI].",
+        "Materi [MATERI] menarik bagi saya.",
+        "Saya ingin mengikuti pelajaran [MATA_PELAJARAN] dengan baik.",
+        "Saya suka melihat contoh [MATERI] yang diberikan [GURU].",
+        "Saya tertarik saat [GURU] menjelaskan [MATERI].",
+        "Saya suka melihat gambar atau contoh tentang [MATERI].",
+        "Saya ingin tahu isi pelajaran [MATA_PELAJARAN] hari ini.",
+        "Saya tertarik ketika [MATERI] dikaitkan dengan kehidupan sehari-hari.",
+        "Saya suka mempelajari hal baru dalam [MATA_PELAJARAN]."
+      ],
+      sedang: [
+        "Saya ingin mengetahui cara menyelesaikan soal [MATERI] dengan benar.",
+        "Saya penasaran ketika [GURU] memberi pertanyaan tentang [MATERI].",
+        "Saya ingin tahu lebih banyak tentang kegunaan [MATERI].",
+        "Saya tertarik mencari cara lain untuk memahami [MATERI].",
+        "Saya ingin mencoba contoh soal [MATERI] yang berbeda.",
+        "Saya tertarik mendengarkan penjelasan [TEMAN] tentang [MATERI].",
+        "Saya ingin mengetahui jawaban yang benar setelah mengerjakan soal [MATERI].",
+        "Saya tertarik ketika [MATERI] dijelaskan dengan gambar, benda, atau contoh nyata."
+      ],
+      tinggi: [
+        "Saya ingin mempelajari [MATERI] lebih lanjut setelah pelajaran selesai.",
+        "Saya mencari contoh lain tentang [MATERI] dari buku pelajaran atau catatan.",
+        "Saya bertanya lebih lanjut kepada [GURU] tentang [MATERI] yang membuat saya penasaran.",
+        "Saya ingin mengetahui cara yang lebih mudah untuk memahami [MATERI].",
+        "Saya tertarik mencoba soal [MATERI] yang lebih menantang.",
+        "Saya ingin tahu hubungan [MATERI] dengan pelajaran lain.",
+        "Saya ingin mencari tahu mengapa jawaban soal [MATERI] bisa benar atau salah.",
+        "Saya tertarik membuat contoh sendiri tentang [MATERI]."
+      ]
+    }
+  },
+  {
+    nama: "Perhatian",
+    indikator: { mudah:"Memperhatikan penjelasan", sedang:"Mempertahankan fokus", tinggi:"Fokus mendalam dan berkelanjutan" },
+    butir: {
+      mudah: [
+        "Saya memperhatikan [GURU] saat pelajaran [MATA_PELAJARAN].",
+        "Saya mendengarkan penjelasan [GURU] dengan baik.",
+        "Saya menyimak materi [MATERI] saat dijelaskan.",
+        "Saya melihat contoh yang diberikan [GURU] dengan saksama.",
+        "Saya mengikuti penjelasan [GURU] selama pelajaran.",
+        "Saya memperhatikan papan tulis atau media saat belajar [MATERI].",
+        "Saya mendengarkan arahan [GURU] sebelum mengerjakan tugas.",
+        "Saya memperhatikan langkah-langkah yang dijelaskan [GURU]."
+      ],
+      sedang: [
+        "Saya tetap fokus belajar [MATA_PELAJARAN] walaupun suasana kelas ramai.",
+        "Saya berusaha memperhatikan [GURU] sampai penjelasan selesai.",
+        "Saya mencoba menyimak kembali ketika ada bagian [MATERI] yang belum saya pahami.",
+        "Saya memperhatikan contoh soal [MATERI] sebelum mengerjakan latihan.",
+        "Saya berusaha tidak berbicara sendiri saat [GURU] menjelaskan [MATERI].",
+        "Saya memperhatikan jawaban [TEMAN] saat membahas soal [MATERI].",
+        "Saya tetap mengikuti pelajaran meskipun [MATERI] terasa sulit.",
+        "Saya mencatat hal penting saat belajar [MATERI]."
+      ],
+      tinggi: [
+        "Saya tetap memperhatikan [GURU] meskipun [MATERI] terasa sulit.",
+        "Saya berusaha memahami setiap langkah penyelesaian soal [MATERI].",
+        "Saya tetap fokus meskipun [TEMAN] di sekitar saya berbicara.",
+        "Saya memeriksa kembali penjelasan [GURU] ketika belum paham.",
+        "Saya memperhatikan kesalahan saya agar tidak mengulanginya lagi.",
+        "Saya menyimak pembahasan soal [MATERI] sampai benar-benar selesai.",
+        "Saya berusaha tetap mengikuti pelajaran walaupun merasa lelah.",
+        "Saya memperhatikan cara [GURU] menyelesaikan soal yang sulit."
+      ]
+    }
+  },
+  {
+    nama: "Keterlibatan Aktif",
+    indikator: { mudah:"Ikut serta dalam kegiatan", sedang:"Berpartisipasi dan bertanya", tinggi:"Aktif atas inisiatif sendiri" },
+    butir: {
+      mudah: [
+        "Saya mengerjakan tugas [MATA_PELAJARAN] yang diberikan [GURU].",
+        "Saya ikut kegiatan belajar [MATA_PELAJARAN] di kelas.",
+        "Saya ikut menjawab pertanyaan dari [GURU].",
+        "Saya menulis jawaban saat diminta [GURU].",
+        "Saya mengikuti kegiatan kelompok bersama [TEMAN].",
+        "Saya mencoba mengerjakan soal [MATERI] di kelas.",
+        "Saya ikut membaca atau melihat contoh yang diberikan [GURU].",
+        "Saya mengerjakan latihan [MATERI] bersama [TEMAN]."
+      ],
+      sedang: [
+        "Saya bertanya kepada [GURU] jika belum memahami [MATERI].",
+        "Saya ikut berdiskusi dengan [TEMAN] saat belajar [MATERI].",
+        "Saya mencoba menjawab soal meskipun belum yakin benar.",
+        "Saya menyampaikan pendapat saat membahas [MATERI] bersama [TEMAN].",
+        "Saya ikut membantu [TEMAN] memahami tugas [MATERI].",
+        "Saya mencoba memperbaiki jawaban setelah mendapat penjelasan [GURU].",
+        "Saya mengerjakan latihan [MATERI] sampai selesai.",
+        "Saya ikut aktif saat [GURU] memberi tugas kelompok.",
+        "Saya mencoba menjelaskan jawaban saya kepada [TEMAN]."
+      ],
+      tinggi: [
+        "Saya mengerjakan soal tambahan [MATERI] tanpa harus selalu disuruh.",
+        "Saya mencoba menyelesaikan soal sulit sebelum meminta bantuan.",
+        "Saya berani bertanya ketika ada bagian [MATERI] yang belum saya pahami.",
+        "Saya berani menyampaikan jawaban meskipun belum tentu benar.",
+        "Saya mencoba membantu [TEMAN] yang belum memahami [MATERI].",
+        "Saya mencari latihan tambahan dari buku pelajaran atau catatan.",
+        "Saya mencoba membuat pertanyaan sendiri tentang [MATERI].",
+        "Saya memperbaiki jawaban saya setelah mengetahui letak kesalahannya.",
+        "Saya tetap berusaha menyelesaikan tugas [MATERI] meskipun awalnya sulit."
+      ]
+    }
+  }
+];
+
+const LEVELS = ["mudah","sedang","tinggi"];
+const LEVEL_LABEL = { mudah:"Mudah disetujui", sedang:"Sedang disetujui", tinggi:"Tinggi / sulit disetujui" };
+const LEVEL_ORDER = { mudah:0, sedang:1, tinggi:2 };
+
+const SKALA_TEKS = "4 = Sangat Setuju; 3 = Setuju; 2 = Tidak Setuju; 1 = Sangat Tidak Setuju";
+
+let LAST = null; // menyimpan hasil generate terakhir untuk ekspor
+
+/* ---------- Util ---------- */
+const $ = (id) => document.getElementById(id);
+
+function toggleExtra(selId, extraId){
+  const sel = $(selId), extra = $(extraId);
+  const on = sel.value === "__lain__";
+  extra.classList.toggle("show", on);
+  if(on) extra.focus();
+}
+
+function getMapel(){
+  const sel = $("mapel").value;
+  if(sel === "__lain__") return $("mapelLain").value.trim();
+  return sel;
+}
+function getObjek(){
+  return $("objek").value.trim();
+}
+function fill(tmpl, v){
+  return tmpl
+    .replace(/\[MATA_PELAJARAN\]/g, v.mapel)
+    .replace(/\[MATERI\]/g, v.materi)
+    .replace(/\[GURU\]/g, v.guru)
+    .replace(/\[TEMAN\]/g, v.teman);
+}
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function countWords(s){
+  return s.replace(/[.,]/g," ").trim().split(/\s+/).filter(Boolean).length;
+}
+function qualityNote(text, lvl){
+  const base = {
+    mudah:  "Pernyataan umum; banyak siswa cenderung setuju. Jangan terlalu banyak butir mudah agar separasi tidak menurun.",
+    sedang: "Mengukur minat yang lebih nyata; sebaran jawaban diharapkan bervariasi.",
+    tinggi: "Menuntut minat kuat; persentase setuju cenderung lebih rendah dan menjangkau ujung atas skala."
+  }[lvl];
+  const panjang = countWords(text) > 12
+    ? "Kalimat agak panjang — pertimbangkan untuk diringkas."
+    : "Panjang kalimat sesuai untuk siswa SD.";
+  return base + " " + panjang + " Tetap perlu diuji empiris (validitas, item fit).";
+}
+
+function showError(msg){ const e=$("errBox"); e.textContent=msg; e.classList.add("err"); }
+function clearError(){ const e=$("errBox"); e.textContent=""; e.classList.remove("err"); }
+
+let toastTimer=null;
+function toast(msg){
+  const t=$("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),1900);
+}
+
+/* ---------- Generate ---------- */
+function generate(){
+  clearError();
+  const mapel = getMapel();
+  const kelas = $("kelas").value.trim();
+  const objek = getObjek();
+  const jumlah = parseInt($("jumlah").value,10);
+
+  if(!mapel){ showError("Mohon isi nama mata pelajaran terlebih dahulu."); return; }
+  if(!kelas){ showError("Mohon isi kelas siswa terlebih dahulu."); return; }
+
+  const konteksVals = {
+    mapel: mapel,
+    materi: objek || mapel,   // jika materi kosong, rujuk ke mata pelajaran
+    guru: "guru",
+    teman: "teman"
+  };
+
+  // Round-robin level-major untuk menghitung kuota tiap kombinasi (distribusi seimbang antar dimensi)
+  const combos = [];
+  for(const lvl of LEVELS){
+    for(let d=0; d<DIMENSI.length; d++) combos.push({ d, lvl, n:0 });
+  }
+  for(let i=0;i<jumlah;i++) combos[i % combos.length].n++;
+
+  // Pilih template acak (tanpa pengulangan) sebanyak kuota dari tiap kombinasi
+  const raw = [];
+  for(const c of combos){
+    if(c.n === 0) continue;
+    const pool = DIMENSI[c.d].butir[c.lvl];
+    const picked = shuffle(pool).slice(0, Math.min(c.n, pool.length));
+    picked.forEach(tmpl => raw.push({ d:c.d, lvl:c.lvl, tmpl }));
+  }
+
+  // Urutkan tampilan: per dimensi, lalu per tingkat
+  raw.sort((a,b)=> (a.d-b.d) || (LEVEL_ORDER[a.lvl]-LEVEL_ORDER[b.lvl]));
+
+  const items = raw.map((r,idx)=>{
+    const dim = DIMENSI[r.d];
+    const text = fill(r.tmpl, konteksVals);
+    return {
+      no: idx+1,
+      dimensi: dim.nama,
+      indikator: dim.indikator[r.lvl],
+      tingkat: r.lvl,
+      tingkatLabel: LEVEL_LABEL[r.lvl],
+      pernyataan: text,
+      arah: "Favorable (+)",
+      catatan: qualityNote(text, r.lvl)
+    };
+  });
+
+  LAST = {
+    meta: { mapel, kelas, objek, jumlah, skala: SKALA_TEKS, tanggal: new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"}) },
+    items
+  };
+
+  render(LAST);
+}
+
+function render(data){
+  // Meta
+  const m = data.meta;
+  $("metaBox").innerHTML = [
+    ["Mata pelajaran", m.mapel],
+    ["Kelas", m.kelas],
+    ["Materi pembelajaran", m.objek || "—"],
+    ["Jumlah butir", m.jumlah + " butir"],
+    ["Skala", "4 tingkat (Likert)"],
+    ["Tanggal", m.tanggal]
+  ].map(([k,v])=>`<div><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join("");
+
+  // Tabel
+  $("angketBody").innerHTML = data.items.map(it=>`
+    <tr>
+      <td class="no">${it.no}</td>
+      <td class="dim">${esc(it.dimensi)}</td>
+      <td>${esc(it.indikator)}</td>
+      <td><span class="pill ${it.tingkat}">${esc(it.tingkatLabel)}</span></td>
+      <td class="statement">${esc(it.pernyataan)}</td>
+      <td class="arah">${esc(it.arah)}</td>
+      <td class="note">${esc(it.catatan)}</td>
+    </tr>`).join("");
+
+  $("output").classList.add("show");
+  ["btnCopy","btnCsv","btnDoc"].forEach(id=>$(id).disabled=false);
+  $("output").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function esc(s){
+  return String(s==null?"":s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+/* ---------- Ekspor ---------- */
+const HEADERS = ["No","Dimensi","Indikator","Tingkat Butir","Pernyataan Angket","Arah Butir","Catatan Kualitas Butir"];
+
+function rowsOf(data){
+  return data.items.map(it=>[it.no,it.dimensi,it.indikator,it.tingkatLabel,it.pernyataan,it.arah,it.catatan]);
+}
+function fileBase(data){
+  const mp = (data.meta.mapel||"angket").replace(/[^\w\u00C0-\u024F ]/g,"").trim().replace(/\s+/g,"_");
+  return `Angket_Minat_${mp}_${data.meta.jumlah}butir`;
+}
+function download(filename, content, mime){
+  const blob = new Blob([content], {type:mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  a.remove(); setTimeout(()=>URL.revokeObjectURL(url),500);
+}
+
+const NARASI = "Angket ini merupakan draft awal. Kualitas instrumen tetap perlu diuji melalui uji coba kepada siswa. Reliabilitas, separation, item fit, dan fungsi kategori jawaban perlu dianalisis sebelum angket digunakan sebagai instrumen final.";
+
+/* TSV ke clipboard (mudah ditempel ke Excel/Word) */
+function copyClipboard(){
+  if(!LAST) return;
+  const m = LAST.meta;
+  const safe = (s)=>String(s).replace(/[\t\r\n]+/g," ").trim();
+  const lines = [];
+  lines.push(`Angket Minat Belajar Siswa`);
+  lines.push(`Mata pelajaran: ${m.mapel}\tKelas: ${m.kelas}\tMateri: ${m.objek || "-"}`);
+  lines.push(`Skala: ${m.skala}`);
+  lines.push("");
+  lines.push(HEADERS.join("\t"));
+  rowsOf(LAST).forEach(r=>lines.push(r.map(safe).join("\t")));
+  lines.push("");
+  lines.push(NARASI);
+  const text = lines.join("\n");
+
+  const done = ()=>toast("Tersalin ke clipboard");
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+function fallbackCopy(text, cb){
+  const ta=document.createElement("textarea");
+  ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); cb(); }catch(e){ toast("Tidak dapat menyalin otomatis"); }
+  ta.remove();
+}
+
+/* CSV (UTF-8 + BOM agar rapi di Excel) */
+function csvCell(s){
+  s = String(s==null?"":s);
+  return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+}
+function downloadCsv(){
+  if(!LAST) return;
+  const m = LAST.meta;
+  const rows = [];
+  rows.push(["Angket Minat Belajar Siswa"]);
+  rows.push(["Mata pelajaran", m.mapel]);
+  rows.push(["Kelas", m.kelas]);
+  rows.push(["Materi pembelajaran", m.objek || "-"]);
+  rows.push(["Jumlah butir", m.jumlah]);
+  rows.push(["Skala", m.skala]);
+  rows.push(["Tanggal", m.tanggal]);
+  rows.push([]);
+  rows.push(HEADERS);
+  rowsOf(LAST).forEach(r=>rows.push(r));
+  rows.push([]);
+  rows.push(["Catatan", NARASI]);
+  const csv = "\ufeff" + rows.map(r=>r.map(csvCell).join(",")).join("\r\n");
+  download(fileBase(LAST)+".csv", csv, "text/csv;charset=utf-8");
+  toast("CSV terunduh");
+}
+
+/* Word/HTML sederhana (.doc, dapat dibuka di MS Word & browser) */
+function downloadDoc(){
+  if(!LAST) return;
+  const m = LAST.meta;
+  const th = HEADERS.map(h=>`<th>${esc(h)}</th>`).join("");
+  const trs = LAST.items.map(it=>`<tr>
+    <td style="text-align:right">${it.no}</td>
+    <td>${esc(it.dimensi)}</td>
+    <td>${esc(it.indikator)}</td>
+    <td>${esc(it.tingkatLabel)}</td>
+    <td>${esc(it.pernyataan)}</td>
+    <td>${esc(it.arah)}</td>
+    <td>${esc(it.catatan)}</td>
+  </tr>`).join("");
+
+  const html =
+`<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><title>Angket Minat ${esc(m.mapel)}</title>
+<style>
+  body{font-family:Calibri,Arial,sans-serif;color:#1f2a44;font-size:11pt}
+  h1{font-size:16pt;margin:0 0 4pt}
+  .sub{color:#555;font-size:10pt;margin:0 0 12pt}
+  table{border-collapse:collapse;width:100%;font-size:9.5pt}
+  th,td{border:1px solid #99a;padding:5pt 6pt;vertical-align:top;text-align:left}
+  th{background:#2f5d8a;color:#fff}
+  .narasi{margin-top:14pt;border-left:3px solid #2f5d8a;padding:8pt 10pt;background:#eef1f5;font-size:10pt}
+</style></head>
+<body>
+  <h1>Angket Minat Belajar Siswa</h1>
+  <p class="sub">
+    Mata pelajaran: <b>${esc(m.mapel)}</b> &nbsp;|&nbsp; Kelas: <b>${esc(m.kelas)}</b> &nbsp;|&nbsp; Materi: <b>${esc(m.objek||"-")}</b><br>
+    Jumlah butir: ${m.jumlah} &nbsp;|&nbsp; Skala: ${esc(m.skala)} &nbsp;|&nbsp; Tanggal: ${esc(m.tanggal)}
+  </p>
+  <table><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>
+  <div class="narasi">
+    <p>${esc(NARASI)}</p>
+    <p style="color:#555">Tingkat mudah/sedang/tinggi menunjukkan kemungkinan siswa menyetujui pernyataan, bukan tingkat kesulitan soal. Validitas, reliabilitas, separasi, dan kecocokan butir sebaiknya diuji dengan data responden (mis. analisis Rasch/RASA).</p>
+  </div>
+</body></html>`;
+
+  download(fileBase(LAST)+".doc", html, "application/msword");
+  toast("Dokumen Word/HTML terunduh");
+}
+
+/* ---------- Reset ---------- */
+function reset(){
+  $("mapel").value="Matematika";
+  $("objek").value="";
+  $("kelas").value="IV SD";
+  $("jumlah").value="24";
+  $("mapelLain").value="";
+  $("mapelLain").classList.remove("show");
+  $("output").classList.remove("show");
+  $("angketBody").innerHTML=""; $("metaBox").innerHTML="";
+  ["btnCopy","btnCsv","btnDoc"].forEach(id=>$(id).disabled=true);
+  clearError();
+  LAST=null;
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ---------- Event binding ---------- */
+$("mapel").addEventListener("change",()=>toggleExtra("mapel","mapelLain"));
+$("btnGenerate").addEventListener("click",generate);
+$("btnCopy").addEventListener("click",copyClipboard);
+$("btnCsv").addEventListener("click",downloadCsv);
+$("btnDoc").addEventListener("click",downloadDoc);
+$("btnReset").addEventListener("click",reset);
+</script>
+</body>
+</html>
