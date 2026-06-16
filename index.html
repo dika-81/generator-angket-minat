@@ -68,6 +68,7 @@
   .seg-btn:hover{background:#f1f4f8}
   .seg-btn.fav.active{background:var(--accent);color:#fff}
   .seg-btn.neg.active{background:var(--tinggi);color:#fff}
+  .seg-btn.mix.active{background:var(--sedang);color:#fff}
   .seg-btn:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 
   .scale-note{
@@ -212,8 +213,9 @@
         <div class="seg" id="arahSeg" role="radiogroup" aria-label="Jenis butir angket">
           <button type="button" class="seg-btn fav active" data-arah="favorable" role="radio" aria-checked="true">Favorable (positif)</button>
           <button type="button" class="seg-btn neg" data-arah="unfavorable" role="radio" aria-checked="false">Unfavorable (negatif)</button>
+          <button type="button" class="seg-btn mix" data-arah="mix" role="radio" aria-checked="false">Campuran (50/50)</button>
         </div>
-        <span class="hint">Favorable: <em>setuju</em> = minat tinggi. Unfavorable: <em>setuju</em> = minat rendah (skor dibalik saat analisis).</span>
+        <span class="hint">Favorable: <em>setuju</em> = minat tinggi. Unfavorable: <em>setuju</em> = minat rendah (skor dibalik). Campuran: 50% positif + 50% negatif, seimbang tiap dimensi &amp; tingkat.</span>
       </div>
 
       <div class="scale-note">
@@ -577,11 +579,14 @@ const LEVEL_LABEL = { mudah:"Mudah disetujui", sedang:"Sedang disetujui", tinggi
 const LEVEL_ORDER = { mudah:0, sedang:1, tinggi:2 };
 
 function skalaTeks(arah){
+  if(arah === "mix")
+    return "Campuran — butir positif: Sangat Setuju=4 … Sangat Tidak Setuju=1; butir negatif (skor dibalik): Sangat Setuju=1 … Sangat Tidak Setuju=4. Lihat kolom Arah Butir.";
   return arah === "unfavorable"
     ? "Butir negatif (skor dibalik): Sangat Setuju = 1; Setuju = 2; Tidak Setuju = 3; Sangat Tidak Setuju = 4"
     : "Butir positif: Sangat Setuju = 4; Setuju = 3; Tidak Setuju = 2; Sangat Tidak Setuju = 1";
 }
 function skalaSingkat(arah){
+  if(arah === "mix") return "Positif: SS=4…STS=1 · Negatif: SS=1…STS=4 (dibalik)";
   return arah === "unfavorable" ? "SS=1 … STS=4 (dibalik)" : "SS=4 … STS=1 (positif)";
 }
 
@@ -662,8 +667,9 @@ function generate(){
 
   const arah = (document.querySelector("#arahSeg .seg-btn.active") || {}).dataset
     ? document.querySelector("#arahSeg .seg-btn.active").dataset.arah : "favorable";
-  const arahLabel = arah === "unfavorable" ? "Unfavorable (−)" : "Favorable (+)";
-  const jenisTeks = arah === "unfavorable" ? "Unfavorable (negatif)" : "Favorable (positif)";
+  const isMix = arah === "mix";
+  const jenisTeks = isMix ? "Campuran 50% positif / 50% negatif"
+    : (arah === "unfavorable" ? "Unfavorable (negatif)" : "Favorable (positif)");
 
   const konteksVals = {
     mapel: mapel,
@@ -679,21 +685,37 @@ function generate(){
   }
   for(let i=0;i<jumlah;i++) combos[i % combos.length].n++;
 
-  // Pilih template acak (tanpa pengulangan) sebanyak kuota dari tiap kombinasi
+  // Pilih template acak (tanpa pengulangan) dari tiap kombinasi.
+  // Untuk mix, penugasan dilakukan dalam urutan dimensi→tingkat agar positif/negatif
+  // berselang di dalam tiap dimensi (keseimbangan per dimensi maksimal).
+  const assignOrder = combos.slice().sort((a,b)=> (a.d-b.d) || (LEVEL_ORDER[a.lvl]-LEVEL_ORDER[b.lvl]));
   const raw = [];
-  for(const c of combos){
+  let extraToFav = true; // untuk mix: kuota ganjil bergiliran ke positif/negatif agar total tetap 50/50
+  for(const c of assignOrder){
     if(c.n === 0) continue;
-    const pool = arah === "unfavorable" ? BANK_NEG[c.d][c.lvl] : DIMENSI[c.d].butir[c.lvl];
-    const picked = shuffle(pool).slice(0, Math.min(c.n, pool.length));
-    picked.forEach(tmpl => raw.push({ d:c.d, lvl:c.lvl, tmpl }));
+    if(isMix){
+      let favN = Math.floor(c.n/2), negN = Math.floor(c.n/2);
+      if(c.n % 2 === 1){ if(extraToFav) favN++; else negN++; extraToFav = !extraToFav; }
+      shuffle(DIMENSI[c.d].butir[c.lvl]).slice(0, favN)
+        .forEach(tmpl => raw.push({ d:c.d, lvl:c.lvl, tmpl, arah:"favorable" }));
+      shuffle(BANK_NEG[c.d][c.lvl]).slice(0, negN)
+        .forEach(tmpl => raw.push({ d:c.d, lvl:c.lvl, tmpl, arah:"unfavorable" }));
+    } else {
+      const pool = arah === "unfavorable" ? BANK_NEG[c.d][c.lvl] : DIMENSI[c.d].butir[c.lvl];
+      shuffle(pool).slice(0, Math.min(c.n, pool.length))
+        .forEach(tmpl => raw.push({ d:c.d, lvl:c.lvl, tmpl, arah }));
+    }
   }
 
-  // Urutkan tampilan: per dimensi, lalu per tingkat
-  raw.sort((a,b)=> (a.d-b.d) || (LEVEL_ORDER[a.lvl]-LEVEL_ORDER[b.lvl]));
+  // Urutkan tampilan: per dimensi, lalu tingkat, lalu arah (positif dulu)
+  const arahOrder = { favorable:0, unfavorable:1 };
+  raw.sort((a,b)=> (a.d-b.d) || (LEVEL_ORDER[a.lvl]-LEVEL_ORDER[b.lvl]) || (arahOrder[a.arah]-arahOrder[b.arah]));
 
+  let nFav = 0, nNeg = 0;
   const items = raw.map((r,idx)=>{
     const dim = DIMENSI[r.d];
     const text = fill(r.tmpl, konteksVals);
+    if(r.arah === "unfavorable") nNeg++; else nFav++;
     return {
       no: idx+1,
       dimensi: dim.nama,
@@ -701,13 +723,18 @@ function generate(){
       tingkat: r.lvl,
       tingkatLabel: LEVEL_LABEL[r.lvl],
       pernyataan: text,
-      arah: arahLabel,
-      catatan: qualityNote(text, r.lvl, arah)
+      arah: r.arah === "unfavorable" ? "Unfavorable (−)" : "Favorable (+)",
+      catatan: qualityNote(text, r.lvl, r.arah)
     };
   });
 
   LAST = {
-    meta: { mapel, kelas, objek, jumlah, arah, jenis: jenisTeks, skala: skalaTeks(arah), skalaSingkat: skalaSingkat(arah), tanggal: new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"}) },
+    meta: {
+      mapel, kelas, objek, jumlah, arah, jenis: jenisTeks,
+      komposisi: isMix ? (nFav + " positif · " + nNeg + " negatif") : null,
+      skala: skalaTeks(arah), skalaSingkat: skalaSingkat(arah),
+      tanggal: new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})
+    },
     items
   };
 
@@ -717,15 +744,17 @@ function generate(){
 function render(data){
   // Meta
   const m = data.meta;
-  $("metaBox").innerHTML = [
+  const metaRows = [
     ["Mata pelajaran", m.mapel],
     ["Kelas", m.kelas],
     ["Materi pembelajaran", m.objek || "—"],
     ["Jumlah butir", m.jumlah + " butir"],
-    ["Jenis butir", m.jenis],
-    ["Skala", m.skalaSingkat],
-    ["Tanggal", m.tanggal]
-  ].map(([k,v])=>`<div><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join("");
+    ["Jenis butir", m.jenis]
+  ];
+  if(m.komposisi) metaRows.push(["Komposisi", m.komposisi]);
+  metaRows.push(["Skala", m.skalaSingkat], ["Tanggal", m.tanggal]);
+  $("metaBox").innerHTML = metaRows
+    .map(([k,v])=>`<div><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join("");
 
   // Legenda dinamis sesuai arah butir
   const legenda = m.arah === "unfavorable"
@@ -733,6 +762,12 @@ function render(data){
         ["var(--mudah)",  "Mudah — pernyataan negatif ringan"],
         ["var(--sedang)", "Sedang — ketidaktertarikan yang lebih nyata"],
         ["var(--tinggi)", "Tinggi — penolakan / minat sangat rendah"]
+      ]
+    : m.arah === "mix"
+    ? [
+        ["var(--mudah)",  "Mudah — pernyataan paling ringan"],
+        ["var(--sedang)", "Sedang — tingkat menengah"],
+        ["var(--tinggi)", "Tinggi — pernyataan paling kuat (lihat Arah Butir)"]
       ]
     : [
         ["var(--mudah)",  "Mudah disetujui — pernyataan umum &amp; ringan"],
@@ -743,9 +778,12 @@ function render(data){
     .map(([c,t])=>`<span><i class="dot" style="background:${c}"></i> ${t}</span>`).join("");
 
   // Catatan arah pada narasi
-  $("arahNote").innerHTML = m.arah === "unfavorable"
-    ? "Angket ini berisi <strong>butir negatif (unfavorable)</strong>. Pada butir negatif, jawaban <em>setuju</em> menunjukkan minat yang rendah, sehingga skornya perlu <strong>dibalik (4↔1, 3↔2)</strong> sebelum dianalisis. Untuk siswa SD, butir negatif rawan disalahpahami; sebaiknya diuji keterbacaannya dan dipakai bersama butir positif secara seimbang."
-    : "Angket ini berisi <strong>butir positif (favorable)</strong>. Jawaban <em>setuju</em> menunjukkan minat yang lebih tinggi.";
+  $("arahNote").innerHTML =
+    m.arah === "unfavorable"
+      ? "Angket ini berisi <strong>butir negatif (unfavorable)</strong>. Pada butir negatif, jawaban <em>setuju</em> menunjukkan minat yang rendah, sehingga skornya perlu <strong>dibalik (4↔1, 3↔2)</strong> sebelum dianalisis. Untuk siswa SD, butir negatif rawan disalahpahami; sebaiknya diuji keterbacaannya dan dipakai bersama butir positif secara seimbang."
+    : m.arah === "mix"
+      ? "Angket ini <strong>campuran 50% butir positif dan 50% butir negatif</strong>, seimbang pada setiap dimensi dan tingkat. Lihat kolom <em>Arah Butir</em>: butir <strong>Unfavorable (−)</strong> harus <strong>dibalik skornya (4↔1, 3↔2)</strong> sebelum dianalisis, sedangkan butir <strong>Favorable (+)</strong> diskor langsung. Pencampuran membantu mengurangi kecenderungan menjawab asal setuju, namun untuk siswa SD pastikan keterbacaan butir negatif diuji."
+      : "Angket ini berisi <strong>butir positif (favorable)</strong>. Jawaban <em>setuju</em> menunjukkan minat yang lebih tinggi.";
 
   // Tabel
   $("angketBody").innerHTML = data.items.map(it=>`
@@ -778,7 +816,7 @@ function rowsOf(data){
 }
 function fileBase(data){
   const mp = (data.meta.mapel||"angket").replace(/[^\w\u00C0-\u024F ]/g,"").trim().replace(/\s+/g,"_");
-  const ar = data.meta.arah === "unfavorable" ? "Negatif" : "Positif";
+  const ar = data.meta.arah === "unfavorable" ? "Negatif" : (data.meta.arah === "mix" ? "Campuran" : "Positif");
   return `Angket_Minat_${mp}_${ar}_${data.meta.jumlah}butir`;
 }
 function download(filename, content, mime){
@@ -799,7 +837,7 @@ function copyClipboard(){
   const lines = [];
   lines.push(`Angket Minat Belajar Siswa`);
   lines.push(`Mata pelajaran: ${m.mapel}\tKelas: ${m.kelas}\tMateri: ${m.objek || "-"}`);
-  lines.push(`Jenis butir: ${m.jenis}\tSkala: ${m.skala}`);
+  lines.push(`Jenis butir: ${m.jenis}${m.komposisi ? " ("+m.komposisi+")" : ""}\tSkala: ${m.skala}`);
   lines.push("");
   lines.push(HEADERS.join("\t"));
   rowsOf(LAST).forEach(r=>lines.push(r.map(safe).join("\t")));
@@ -837,6 +875,7 @@ function downloadCsv(){
   rows.push(["Materi pembelajaran", m.objek || "-"]);
   rows.push(["Jumlah butir", m.jumlah]);
   rows.push(["Jenis butir", m.jenis]);
+  if(m.komposisi) rows.push(["Komposisi", m.komposisi]);
   rows.push(["Skala", m.skala]);
   rows.push(["Tanggal", m.tanggal]);
   rows.push([]);
@@ -880,12 +919,13 @@ function downloadDoc(){
   <h1>Angket Minat Belajar Siswa</h1>
   <p class="sub">
     Mata pelajaran: <b>${esc(m.mapel)}</b> &nbsp;|&nbsp; Kelas: <b>${esc(m.kelas)}</b> &nbsp;|&nbsp; Materi: <b>${esc(m.objek||"-")}</b><br>
-    Jumlah butir: ${m.jumlah} &nbsp;|&nbsp; Jenis butir: <b>${esc(m.jenis)}</b> &nbsp;|&nbsp; Skala: ${esc(m.skala)} &nbsp;|&nbsp; Tanggal: ${esc(m.tanggal)}
+    Jumlah butir: ${m.jumlah} &nbsp;|&nbsp; Jenis butir: <b>${esc(m.jenis)}</b>${m.komposisi ? " ("+esc(m.komposisi)+")" : ""} &nbsp;|&nbsp; Skala: ${esc(m.skala)} &nbsp;|&nbsp; Tanggal: ${esc(m.tanggal)}
   </p>
   <table><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>
   <div class="narasi">
     <p>${esc(NARASI)}</p>
     ${m.arah === "unfavorable" ? '<p style="color:#555">Butir bersifat negatif (unfavorable): jawaban setuju menandakan minat rendah, sehingga skor perlu dibalik (4&harr;1, 3&harr;2) sebelum dianalisis.</p>' : ''}
+    ${m.arah === "mix" ? '<p style="color:#555">Angket campuran 50% positif + 50% negatif (seimbang tiap dimensi &amp; tingkat). Butir negatif (kolom Arah Butir = Unfavorable) perlu dibalik skornya (4&harr;1, 3&harr;2) sebelum dianalisis.</p>' : ''}
     <p style="color:#555">Tingkat mudah/sedang/tinggi menunjukkan kemungkinan siswa menyetujui pernyataan, bukan tingkat kesulitan soal. Validitas, reliabilitas, separasi, dan kecocokan butir sebaiknya diuji dengan data responden (mis. analisis Rasch/RASA).</p>
   </div>
 </body></html>`;
@@ -921,6 +961,9 @@ function renderScale(arah){
   if(arah === "unfavorable"){
     cap.className = "scale-cap neg";
     cap.innerHTML = "Skala dibalik untuk butir negatif: <em>Sangat Setuju = 1</em>, <em>Sangat Tidak Setuju = 4</em> (setuju = minat rendah).";
+  } else if(arah === "mix"){
+    cap.className = "scale-cap";
+    cap.innerHTML = "Skala di atas berlaku untuk butir <strong>positif</strong> (Sangat Setuju = 4). Untuk butir <strong>negatif</strong>, skor <strong>dibalik</strong> (Sangat Setuju = 1 … Sangat Tidak Setuju = 4). Penyekoran mengikuti kolom <em>Arah Butir</em>.";
   } else {
     cap.className = "scale-cap";
     cap.innerHTML = "Skala ini untuk butir positif: <em>Sangat Setuju = 4</em>. Untuk butir negatif, skor dibalik.";
