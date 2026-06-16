@@ -62,6 +62,15 @@
   .extra{display:none}
   .extra.show{display:block}
 
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;align-self:flex-start;max-width:100%;flex-wrap:wrap}
+  .seg-btn{border:none;border-radius:0;border-right:1px solid var(--line);background:#fff;color:var(--muted);font-weight:600;padding:9px 16px}
+  .seg-btn:last-child{border-right:none}
+  .seg-btn:hover{background:#f1f4f8}
+  .seg-btn.fav.active{background:var(--accent);color:#fff}
+  .seg-btn.neg.active{background:var(--tinggi);color:#fff}
+  .seg-btn.mix.active{background:var(--sedang);color:#fff}
+  .seg-btn:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
   .scale-note{
     grid-column:1/-1;background:var(--paper);border:1px dashed var(--line);
     border-radius:8px;padding:12px 14px;font-size:13px;color:var(--muted)
@@ -70,6 +79,8 @@
   .scale-note .pts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
   .scale-note .pt{background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12.5px;color:var(--ink)}
   .scale-note .pt b{color:var(--accent)}
+  .scale-note .scale-cap{margin-top:9px;font-size:12.5px;line-height:1.5}
+  .scale-note .scale-cap.neg{color:var(--tinggi);font-weight:600}
 
   .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
   button{
@@ -154,7 +165,7 @@
   <header class="page">
     <p class="eyebrow">Penyusunan Instrumen · Skala Likert</p>
     <h1>Generator Angket Minat Siswa by PGSD UPI Kampus Serang</h1>
-    <p class="lede"> Program yang membantu guru dan mahasiswa menyusun <em>draft</em> angket minat belajar siswa SD. Butir angket disusun berdasarkan empat dimensi minat belajar dengan variasi tingkat persetujuan mudah, sedang, dan tinggi. Hasil yang digenerate program masih perlu ditelaah kembali, diedit bila diperlukan, divalidasi oleh ahli, serta diuji secara empiris sebelum digunakan dalam penelitian.</p>
+    <p class="lede"> Program yang membantu guru dan mahasiswa menyusun <em>draft</em> angket minat belajar siswa SD. Butir angket disusun berdasarkan empat dimensi minat belajar dengan variasi tingkat persetujuan mudah, sedang, dan tinggi agar sebaran butir lebih terarah. Kualitas instrumen tetap perlu diperiksa melalui validasi ahli dan uji empiris, misalnya dengan melihat person reliability, person separation, item reliability, dan item separation sebelum digunakan dalam penelitian.</p>
   </header>
 
   <section class="card" aria-label="Pengaturan angket">
@@ -184,7 +195,7 @@
       <div class="field">
         <label for="objek">Materi pembelajaran</label>
         <input type="text" id="objek" placeholder="mis. bangun datar, pecahan, sumber energi">
-        <span class="hint">Opsional. Ditulis sebagai “… pada materi …”. Kosongkan bila tidak spesifik.</span>
+        <span class="hint">Opsional. Mengisi placeholder [MATERI] pada kalimat. Bila kosong, dirujuk ke mata pelajaran.</span>
       </div>
 
       <div class="field">
@@ -197,14 +208,20 @@
         <span class="hint">Dibagi merata ke 4 dimensi × 3 tingkat.</span>
       </div>
 
+      <div class="field full">
+        <label>Jenis butir angket</label>
+        <div class="seg" id="arahSeg" role="radiogroup" aria-label="Jenis butir angket">
+          <button type="button" class="seg-btn fav active" data-arah="favorable" role="radio" aria-checked="true">Favorable (positif)</button>
+          <button type="button" class="seg-btn neg" data-arah="unfavorable" role="radio" aria-checked="false">Unfavorable (negatif)</button>
+          <button type="button" class="seg-btn mix" data-arah="mix" role="radio" aria-checked="false">Campuran (50/50)</button>
+        </div>
+        <span class="hint">Favorable: <em>setuju</em> = minat tinggi. Unfavorable: <em>setuju</em> = minat rendah (skor dibalik). Campuran: 50% positif + 50% negatif, seimbang tiap dimensi &amp; tingkat.</span>
+      </div>
+
       <div class="scale-note">
         <strong>Skala jawaban</strong> — 4 tingkat (default):
-        <div class="pts">
-          <span class="pt"><b>4</b> Sangat Setuju</span>
-          <span class="pt"><b>3</b> Setuju</span>
-          <span class="pt"><b>2</b> Tidak Setuju</span>
-          <span class="pt"><b>1</b> Sangat Tidak Setuju</span>
-        </div>
+        <div class="pts" id="scalePts"></div>
+        <div class="scale-cap" id="scaleCap"></div>
       </div>
 
     </div>
@@ -242,15 +259,12 @@
         </table>
       </div>
 
-      <div class="legend">
-        <span><i class="dot" style="background:var(--mudah)"></i> Mudah disetujui — pernyataan umum &amp; ringan</span>
-        <span><i class="dot" style="background:var(--sedang)"></i> Sedang — minat yang lebih nyata</span>
-        <span><i class="dot" style="background:var(--tinggi)"></i> Tinggi — minat kuat (tetap tertarik meski sulit)</span>
-      </div>
+      <div class="legend" id="legendBox"></div>
 
       <div class="narrative">
         <h3>Catatan instrumen</h3>
         <p>Angket ini merupakan draft awal. Kualitas instrumen tetap perlu diuji melalui uji coba kepada siswa. Reliabilitas, separation, item fit, dan fungsi kategori jawaban perlu dianalisis sebelum angket digunakan sebagai instrumen final.</p>
+        <p id="arahNote"></p>
         <p>Tingkat <em>mudah</em>, <em>sedang</em>, dan <em>tinggi</em> di sini bukan tingkat kesulitan soal, melainkan tingkat kemungkinan siswa menyetujui pernyataan. Validitas isi, reliabilitas, separasi, dan kecocokan butir sebaiknya diuji dengan data responden, misalnya melalui analisis Rasch (mis. dengan RASA).</p>
       </div>
     </div>
@@ -265,9 +279,12 @@
 <script>
 "use strict";
 
-/* ---------- Data dimensi, indikator, dan bank pernyataan ---------- */
-/* {mapel}   = nama mata pelajaran
-   {konteks} = "pelajaran <mapel>" atau "pelajaran <mapel> dengan <objek>" */
+/* ---------- Data dimensi, indikator, dan bank pernyataan (100 template) ---------- */
+/* Placeholder yang dikenali:
+   [MATA_PELAJARAN] = nama mata pelajaran
+   [MATERI]         = materi/topik (jika kosong, dirujuk ke mata pelajaran)
+   [GURU]           = "guru"
+   [TEMAN]          = "teman" */
 
 const DIMENSI = [
   {
@@ -275,19 +292,35 @@ const DIMENSI = [
     indikator: { mudah:"Menyukai pelajaran", sedang:"Menikmati proses belajar", tinggi:"Tetap senang dalam kondisi sulit" },
     butir: {
       mudah: [
-        "Saya senang mengikuti {konteks}.",
-        "Saya suka saat pelajaran {mapel} dimulai.",
-        "Belajar {mapel} membuat hati saya senang."
+        "Saya senang mengikuti pelajaran [MATA_PELAJARAN].",
+        "Saya suka belajar [MATA_PELAJARAN] di kelas.",
+        "Belajar [MATERI] membuat saya senang.",
+        "Saya senang saat [GURU] mulai mengajar [MATA_PELAJARAN].",
+        "Saya merasa senang ketika membahas [MATERI].",
+        "Saya suka saat kelas belajar [MATERI].",
+        "Saya menikmati pelajaran [MATA_PELAJARAN].",
+        "Saya senang jika hari ini ada pelajaran [MATA_PELAJARAN].",
+        "Saya merasa nyaman saat belajar [MATA_PELAJARAN]."
       ],
       sedang: [
-        "Saya merasa waktu cepat berlalu saat {konteks}.",
-        "Saya tetap senang walau materi {mapel} mulai sulit.",
-        "Saya gembira setiap ada pelajaran {mapel}."
+        "Saya tetap senang belajar [MATA_PELAJARAN] walaupun materinya cukup sulit.",
+        "Saya merasa senang ketika berhasil memahami [MATERI].",
+        "Saya tetap menikmati pelajaran [MATA_PELAJARAN] meskipun harus berpikir lebih keras.",
+        "Saya senang mencoba memahami [MATERI] sedikit demi sedikit.",
+        "Saya merasa puas ketika dapat menyelesaikan latihan [MATERI].",
+        "Saya tetap suka belajar [MATA_PELAJARAN] meskipun ada bagian yang belum saya pahami.",
+        "Saya senang jika [GURU] memberi contoh baru tentang [MATERI].",
+        "Saya merasa belajar [MATERI] menjadi menyenangkan ketika dikerjakan bersama [TEMAN]."
       ],
       tinggi: [
-        "Saya tetap senang belajar {mapel} meskipun tidak dinilai.",
-        "Saya rela menunda bermain demi belajar {mapel}.",
-        "Saya senang belajar {mapel} sendiri di rumah tanpa disuruh."
+        "Saya tetap senang belajar [MATA_PELAJARAN] meskipun soal yang diberikan sulit.",
+        "Saya tetap menikmati belajar [MATERI] walaupun perlu mengulang beberapa kali.",
+        "Saya merasa senang ketika berhasil memahami bagian [MATERI] yang awalnya sulit.",
+        "Saya tetap bersemangat mengikuti pelajaran [MATA_PELAJARAN] sampai selesai.",
+        "Saya merasa tertantang saat belajar [MATERI] yang lebih sulit.",
+        "Saya tetap suka belajar [MATA_PELAJARAN] meskipun pernah salah menjawab.",
+        "Saya senang mencoba lagi ketika belum berhasil memahami [MATERI].",
+        "Saya tetap merasa senang saat harus berlatih soal [MATERI] lebih banyak."
       ]
     }
   },
@@ -296,19 +329,35 @@ const DIMENSI = [
     indikator: { mudah:"Tertarik pada materi/penyajian", sedang:"Ingin tahu lebih dalam", tinggi:"Mencari pengetahuan tambahan mandiri" },
     butir: {
       mudah: [
-        "Saya tertarik mengikuti {konteks}.",
-        "Materi {mapel} menarik bagi saya.",
-        "Saya suka melihat hal baru dalam pelajaran {mapel}."
+        "Saya tertarik belajar [MATERI].",
+        "Materi [MATERI] menarik bagi saya.",
+        "Saya ingin mengikuti pelajaran [MATA_PELAJARAN] dengan baik.",
+        "Saya suka melihat contoh [MATERI] yang diberikan [GURU].",
+        "Saya tertarik saat [GURU] menjelaskan [MATERI].",
+        "Saya suka melihat gambar atau contoh tentang [MATERI].",
+        "Saya ingin tahu isi pelajaran [MATA_PELAJARAN] hari ini.",
+        "Saya tertarik ketika [MATERI] dikaitkan dengan kehidupan sehari-hari.",
+        "Saya suka mempelajari hal baru dalam [MATA_PELAJARAN]."
       ],
       sedang: [
-        "Saya ingin tahu lebih banyak tentang {mapel}.",
-        "Saya penasaran dengan materi {mapel} berikutnya.",
-        "Saya tertarik mengerjakan soal {mapel} yang baru."
+        "Saya ingin mengetahui cara menyelesaikan soal [MATERI] dengan benar.",
+        "Saya penasaran ketika [GURU] memberi pertanyaan tentang [MATERI].",
+        "Saya ingin tahu lebih banyak tentang kegunaan [MATERI].",
+        "Saya tertarik mencari cara lain untuk memahami [MATERI].",
+        "Saya ingin mencoba contoh soal [MATERI] yang berbeda.",
+        "Saya tertarik mendengarkan penjelasan [TEMAN] tentang [MATERI].",
+        "Saya ingin mengetahui jawaban yang benar setelah mengerjakan soal [MATERI].",
+        "Saya tertarik ketika [MATERI] dijelaskan dengan gambar, benda, atau contoh nyata."
       ],
       tinggi: [
-        "Saya mencari sendiri informasi {mapel} dari buku atau internet.",
-        "Saya bertanya kepada orang lain agar lebih paham {mapel}.",
-        "Saya tetap tertarik pada {mapel} meskipun soalnya sulit."
+        "Saya ingin mempelajari [MATERI] lebih lanjut setelah pelajaran selesai.",
+        "Saya mencari contoh lain tentang [MATERI] dari buku pelajaran atau catatan.",
+        "Saya bertanya lebih lanjut kepada [GURU] tentang [MATERI] yang membuat saya penasaran.",
+        "Saya ingin mengetahui cara yang lebih mudah untuk memahami [MATERI].",
+        "Saya tertarik mencoba soal [MATERI] yang lebih menantang.",
+        "Saya ingin tahu hubungan [MATERI] dengan pelajaran lain.",
+        "Saya ingin mencari tahu mengapa jawaban soal [MATERI] bisa benar atau salah.",
+        "Saya tertarik membuat contoh sendiri tentang [MATERI]."
       ]
     }
   },
@@ -317,19 +366,34 @@ const DIMENSI = [
     indikator: { mudah:"Memperhatikan penjelasan", sedang:"Mempertahankan fokus", tinggi:"Fokus mendalam dan berkelanjutan" },
     butir: {
       mudah: [
-        "Saya memperhatikan guru selama {konteks}.",
-        "Saya mendengarkan penjelasan pelajaran {mapel}.",
-        "Saya menyimak materi {mapel} dengan baik."
+        "Saya memperhatikan [GURU] saat pelajaran [MATA_PELAJARAN].",
+        "Saya mendengarkan penjelasan [GURU] dengan baik.",
+        "Saya menyimak materi [MATERI] saat dijelaskan.",
+        "Saya melihat contoh yang diberikan [GURU] dengan saksama.",
+        "Saya mengikuti penjelasan [GURU] selama pelajaran.",
+        "Saya memperhatikan papan tulis atau media saat belajar [MATERI].",
+        "Saya mendengarkan arahan [GURU] sebelum mengerjakan tugas.",
+        "Saya memperhatikan langkah-langkah yang dijelaskan [GURU]."
       ],
       sedang: [
-        "Saya tetap fokus belajar {mapel} walau suasana ramai.",
-        "Saya memperhatikan {mapel} sampai pelajaran selesai.",
-        "Saya mencatat hal penting saat belajar {mapel}."
+        "Saya tetap fokus belajar [MATA_PELAJARAN] walaupun suasana kelas ramai.",
+        "Saya berusaha memperhatikan [GURU] sampai penjelasan selesai.",
+        "Saya mencoba menyimak kembali ketika ada bagian [MATERI] yang belum saya pahami.",
+        "Saya memperhatikan contoh soal [MATERI] sebelum mengerjakan latihan.",
+        "Saya berusaha tidak berbicara sendiri saat [GURU] menjelaskan [MATERI].",
+        "Saya memperhatikan jawaban [TEMAN] saat membahas soal [MATERI].",
+        "Saya tetap mengikuti pelajaran meskipun [MATERI] terasa sulit.",
+        "Saya mencatat hal penting saat belajar [MATERI]."
       ],
       tinggi: [
-        "Saya tetap memperhatikan {mapel} meskipun materinya sulit.",
-        "Saya mengulang pelajaran {mapel} di rumah agar tidak lupa.",
-        "Saya berusaha memahami {mapel} walaupun sedang lelah."
+        "Saya tetap memperhatikan [GURU] meskipun [MATERI] terasa sulit.",
+        "Saya berusaha memahami setiap langkah penyelesaian soal [MATERI].",
+        "Saya tetap fokus meskipun [TEMAN] di sekitar saya berbicara.",
+        "Saya memeriksa kembali penjelasan [GURU] ketika belum paham.",
+        "Saya memperhatikan kesalahan saya agar tidak mengulanginya lagi.",
+        "Saya menyimak pembahasan soal [MATERI] sampai benar-benar selesai.",
+        "Saya berusaha tetap mengikuti pelajaran walaupun merasa lelah.",
+        "Saya memperhatikan cara [GURU] menyelesaikan soal yang sulit."
       ]
     }
   },
@@ -338,21 +402,175 @@ const DIMENSI = [
     indikator: { mudah:"Ikut serta dalam kegiatan", sedang:"Berpartisipasi dan bertanya", tinggi:"Aktif atas inisiatif sendiri" },
     butir: {
       mudah: [
-        "Saya ikut kegiatan dalam {konteks}.",
-        "Saya mengerjakan tugas {mapel} yang diberikan guru.",
-        "Saya ikut menjawab pertanyaan saat pelajaran {mapel}."
+        "Saya mengerjakan tugas [MATA_PELAJARAN] yang diberikan [GURU].",
+        "Saya ikut kegiatan belajar [MATA_PELAJARAN] di kelas.",
+        "Saya ikut menjawab pertanyaan dari [GURU].",
+        "Saya menulis jawaban saat diminta [GURU].",
+        "Saya mengikuti kegiatan kelompok bersama [TEMAN].",
+        "Saya mencoba mengerjakan soal [MATERI] di kelas.",
+        "Saya ikut membaca atau melihat contoh yang diberikan [GURU].",
+        "Saya mengerjakan latihan [MATERI] bersama [TEMAN]."
       ],
       sedang: [
-        "Saya bertanya kepada guru bila belum paham {mapel}.",
-        "Saya ikut berdiskusi tentang {mapel} dengan teman.",
-        "Saya membantu teman yang kesulitan belajar {mapel}."
+        "Saya bertanya kepada [GURU] jika belum memahami [MATERI].",
+        "Saya ikut berdiskusi dengan [TEMAN] saat belajar [MATERI].",
+        "Saya mencoba menjawab soal meskipun belum yakin benar.",
+        "Saya menyampaikan pendapat saat membahas [MATERI] bersama [TEMAN].",
+        "Saya ikut membantu [TEMAN] memahami tugas [MATERI].",
+        "Saya mencoba memperbaiki jawaban setelah mendapat penjelasan [GURU].",
+        "Saya mengerjakan latihan [MATERI] sampai selesai.",
+        "Saya ikut aktif saat [GURU] memberi tugas kelompok.",
+        "Saya mencoba menjelaskan jawaban saya kepada [TEMAN]."
       ],
       tinggi: [
-        "Saya mengerjakan soal {mapel} tambahan tanpa disuruh.",
-        "Saya berani menjawab soal {mapel} yang sulit.",
-        "Saya tetap mengerjakan tugas {mapel} walau tidak dinilai."
+        "Saya mengerjakan soal tambahan [MATERI] tanpa harus selalu disuruh.",
+        "Saya mencoba menyelesaikan soal sulit sebelum meminta bantuan.",
+        "Saya berani bertanya ketika ada bagian [MATERI] yang belum saya pahami.",
+        "Saya berani menyampaikan jawaban meskipun belum tentu benar.",
+        "Saya mencoba membantu [TEMAN] yang belum memahami [MATERI].",
+        "Saya mencari latihan tambahan dari buku pelajaran atau catatan.",
+        "Saya mencoba membuat pertanyaan sendiri tentang [MATERI].",
+        "Saya memperbaiki jawaban saya setelah mengetahui letak kesalahannya.",
+        "Saya tetap berusaha menyelesaikan tugas [MATERI] meskipun awalnya sulit."
       ]
     }
+  }
+];
+
+/* Bank pernyataan NEGATIF (unfavorable), indeks dimensi sejajar dengan DIMENSI:
+   0=Perasaan Senang, 1=Ketertarikan, 2=Perhatian, 3=Keterlibatan Aktif */
+const BANK_NEG = [
+  { // Perasaan Senang
+    mudah: [
+      "Saya kurang senang mengikuti pelajaran [MATA_PELAJARAN].",
+      "Saya merasa biasa saja saat belajar [MATERI].",
+      "Saya kurang suka saat pelajaran [MATA_PELAJARAN] dimulai.",
+      "Belajar [MATERI] kurang membuat saya senang.",
+      "Saya tidak terlalu menikmati pelajaran [MATA_PELAJARAN].",
+      "Saya merasa kurang bersemangat saat belajar [MATERI].",
+      "Saya kurang nyaman ketika belajar [MATA_PELAJARAN].",
+      "Saya lebih sering merasa bosan saat belajar [MATERI].",
+      "Saya kurang menunggu-nunggu pelajaran [MATA_PELAJARAN]."
+    ],
+    sedang: [
+      "Saya mulai kurang senang ketika materi [MATA_PELAJARAN] terasa sulit.",
+      "Saya kurang menikmati pelajaran [MATA_PELAJARAN] jika harus berpikir lebih keras.",
+      "Saya merasa kurang senang ketika belum memahami [MATERI].",
+      "Saya cepat merasa bosan saat belajar [MATERI].",
+      "Saya kurang bersemangat menyelesaikan latihan [MATERI].",
+      "Saya kurang suka belajar [MATA_PELAJARAN] jika soalnya mulai sulit.",
+      "Saya kurang senang ketika [GURU] memberi contoh baru tentang [MATERI].",
+      "Saya kurang menikmati kegiatan belajar [MATERI] bersama [TEMAN]."
+    ],
+    tinggi: [
+      "Saya tetap kurang senang belajar [MATA_PELAJARAN] meskipun [GURU] menjelaskan dengan jelas.",
+      "Saya kurang ingin belajar [MATERI] walaupun sudah diberi contoh.",
+      "Saya merasa tidak bersemangat ketika harus mengulang [MATERI].",
+      "Saya ingin pelajaran [MATA_PELAJARAN] cepat selesai.",
+      "Saya merasa terbebani saat belajar [MATERI] yang lebih sulit.",
+      "Saya kurang suka belajar [MATA_PELAJARAN] meskipun pernah berhasil menjawab soal.",
+      "Saya tidak ingin mencoba lagi ketika belum berhasil memahami [MATERI].",
+      "Saya kurang senang jika harus berlatih soal [MATERI] lebih banyak."
+    ]
+  },
+  { // Ketertarikan
+    mudah: [
+      "Saya kurang tertarik belajar [MATERI].",
+      "Materi [MATERI] kurang menarik bagi saya.",
+      "Saya kurang ingin mengetahui isi pelajaran [MATA_PELAJARAN].",
+      "Saya kurang tertarik saat [GURU] menjelaskan [MATERI].",
+      "Contoh tentang [MATERI] kurang menarik perhatian saya.",
+      "Saya kurang suka mempelajari hal baru dalam [MATA_PELAJARAN].",
+      "Saya kurang tertarik melihat contoh [MATERI] di kelas.",
+      "Saya kurang penasaran dengan materi [MATA_PELAJARAN] berikutnya.",
+      "Saya kurang ingin memahami [MATERI] lebih dalam."
+    ],
+    sedang: [
+      "Saya kurang ingin mengetahui cara menyelesaikan soal [MATERI].",
+      "Saya kurang penasaran ketika [GURU] memberi pertanyaan tentang [MATERI].",
+      "Saya kurang ingin tahu kegunaan [MATERI] dalam kehidupan sehari-hari.",
+      "Saya kurang tertarik mencari cara lain untuk memahami [MATERI].",
+      "Saya kurang ingin mencoba contoh soal [MATERI] yang berbeda.",
+      "Saya kurang tertarik mendengarkan penjelasan [TEMAN] tentang [MATERI].",
+      "Saya kurang ingin mengetahui jawaban yang benar setelah mengerjakan soal [MATERI].",
+      "Saya kurang tertarik ketika [MATERI] dijelaskan dengan gambar, benda, atau contoh nyata."
+    ],
+    tinggi: [
+      "Saya tidak ingin mempelajari [MATERI] lebih lanjut setelah pelajaran selesai.",
+      "Saya tidak tertarik mencari contoh lain tentang [MATERI] dari buku pelajaran atau catatan.",
+      "Saya tidak ingin bertanya lebih lanjut kepada [GURU] tentang [MATERI].",
+      "Saya tidak ingin mengetahui cara lain untuk memahami [MATERI].",
+      "Saya tidak tertarik mencoba soal [MATERI] yang lebih menantang.",
+      "Saya tidak ingin tahu hubungan [MATERI] dengan pelajaran lain.",
+      "Saya kurang peduli mengapa jawaban soal [MATERI] benar atau salah.",
+      "Saya tidak tertarik membuat contoh sendiri tentang [MATERI]."
+    ]
+  },
+  { // Perhatian
+    mudah: [
+      "Saya kurang memperhatikan [GURU] saat pelajaran [MATA_PELAJARAN].",
+      "Saya kadang tidak mendengarkan penjelasan [GURU] dengan baik.",
+      "Saya kurang menyimak materi [MATERI] saat dijelaskan.",
+      "Saya kurang memperhatikan contoh yang diberikan [GURU].",
+      "Saya kurang mengikuti penjelasan [GURU] selama pelajaran.",
+      "Saya kurang memperhatikan papan tulis atau media saat belajar [MATERI].",
+      "Saya kadang tidak mendengarkan arahan [GURU] sebelum mengerjakan tugas.",
+      "Saya kurang memperhatikan langkah-langkah yang dijelaskan [GURU]."
+    ],
+    sedang: [
+      "Saya sulit fokus belajar [MATA_PELAJARAN] ketika suasana kelas ramai.",
+      "Saya kurang memperhatikan [GURU] sampai penjelasan selesai.",
+      "Saya kurang menyimak kembali ketika ada bagian [MATERI] yang belum saya pahami.",
+      "Saya kurang memperhatikan contoh soal [MATERI] sebelum mengerjakan latihan.",
+      "Saya sering ingin berbicara sendiri saat [GURU] menjelaskan [MATERI].",
+      "Saya kurang memperhatikan jawaban [TEMAN] saat membahas soal [MATERI].",
+      "Saya kurang mengikuti pelajaran ketika [MATERI] terasa sulit.",
+      "Saya jarang mencatat hal penting saat belajar [MATERI]."
+    ],
+    tinggi: [
+      "Saya tetap sulit memperhatikan [GURU] meskipun [MATERI] penting untuk dipahami.",
+      "Saya kurang berusaha memahami langkah penyelesaian soal [MATERI].",
+      "Saya mudah kehilangan fokus ketika [TEMAN] di sekitar saya berbicara.",
+      "Saya tidak memeriksa kembali penjelasan [GURU] ketika belum paham.",
+      "Saya kurang memperhatikan kesalahan saya saat belajar [MATERI].",
+      "Saya tidak menyimak pembahasan soal [MATERI] sampai selesai.",
+      "Saya kurang berusaha mengikuti pelajaran ketika merasa lelah.",
+      "Saya kurang memperhatikan cara [GURU] menyelesaikan soal yang sulit."
+    ]
+  },
+  { // Keterlibatan Aktif
+    mudah: [
+      "Saya kurang aktif mengerjakan tugas [MATA_PELAJARAN] di kelas.",
+      "Saya kurang ikut kegiatan belajar [MATA_PELAJARAN].",
+      "Saya jarang menjawab pertanyaan dari [GURU].",
+      "Saya kurang mau mencoba mengerjakan soal [MATERI].",
+      "Saya kurang ikut bekerja sama dengan [TEMAN].",
+      "Saya kadang tidak menyelesaikan latihan [MATERI] di kelas.",
+      "Saya kurang ikut membaca atau melihat contoh yang diberikan [GURU].",
+      "Saya kurang terlibat saat belajar [MATERI] bersama [TEMAN]."
+    ],
+    sedang: [
+      "Saya jarang bertanya kepada [GURU] ketika belum memahami [MATERI].",
+      "Saya kurang ikut berdiskusi dengan [TEMAN] saat belajar [MATERI].",
+      "Saya kurang berani mencoba menjawab soal ketika belum yakin benar.",
+      "Saya jarang menyampaikan pendapat saat membahas [MATERI] bersama [TEMAN].",
+      "Saya kurang membantu [TEMAN] memahami tugas [MATERI].",
+      "Saya kurang mau memperbaiki jawaban setelah mendapat penjelasan [GURU].",
+      "Saya sering berhenti sebelum latihan [MATERI] selesai.",
+      "Saya kurang aktif saat [GURU] memberi tugas kelompok.",
+      "Saya jarang mencoba menjelaskan jawaban saya kepada [TEMAN]."
+    ],
+    tinggi: [
+      "Saya tidak mau mengerjakan soal tambahan [MATERI] tanpa disuruh.",
+      "Saya langsung meminta bantuan sebelum mencoba menyelesaikan soal [MATERI].",
+      "Saya tidak berani bertanya walaupun ada bagian [MATERI] yang belum saya pahami.",
+      "Saya tidak mau menyampaikan jawaban jika belum yakin benar.",
+      "Saya kurang mau membantu [TEMAN] yang belum memahami [MATERI].",
+      "Saya tidak mencari latihan tambahan dari buku pelajaran atau catatan.",
+      "Saya tidak tertarik membuat pertanyaan sendiri tentang [MATERI].",
+      "Saya tidak memperbaiki jawaban meskipun sudah tahu letak kesalahannya.",
+      "Saya mudah menyerah ketika tugas [MATERI] terasa sulit."
+    ]
   }
 ];
 
@@ -360,7 +578,17 @@ const LEVELS = ["mudah","sedang","tinggi"];
 const LEVEL_LABEL = { mudah:"Mudah disetujui", sedang:"Sedang disetujui", tinggi:"Tinggi / sulit disetujui" };
 const LEVEL_ORDER = { mudah:0, sedang:1, tinggi:2 };
 
-const SKALA_TEKS = "4 = Sangat Setuju; 3 = Setuju; 2 = Tidak Setuju; 1 = Sangat Tidak Setuju";
+function skalaTeks(arah){
+  if(arah === "mix")
+    return "Campuran — butir positif: Sangat Setuju=4 … Sangat Tidak Setuju=1; butir negatif (skor dibalik): Sangat Setuju=1 … Sangat Tidak Setuju=4. Lihat kolom Arah Butir.";
+  return arah === "unfavorable"
+    ? "Butir negatif (skor dibalik): Sangat Setuju = 1; Setuju = 2; Tidak Setuju = 3; Sangat Tidak Setuju = 4"
+    : "Butir positif: Sangat Setuju = 4; Setuju = 3; Tidak Setuju = 2; Sangat Tidak Setuju = 1";
+}
+function skalaSingkat(arah){
+  if(arah === "mix") return "Positif: SS=4…STS=1 · Negatif: SS=1…STS=4 (dibalik)";
+  return arah === "unfavorable" ? "SS=1 … STS=4 (dibalik)" : "SS=4 … STS=1 (positif)";
+}
 
 let LAST = null; // menyimpan hasil generate terakhir untuk ekspor
 
@@ -382,26 +610,38 @@ function getMapel(){
 function getObjek(){
   return $("objek").value.trim();
 }
-function buildKonteks(mapel, objek){
-  const o = (objek||"").trim();
-  if(!o) return "pelajaran " + mapel;
-  return "pelajaran " + mapel + " pada materi " + o;
+function fill(tmpl, v){
+  return tmpl
+    .replace(/\[MATA_PELAJARAN\]/g, v.mapel)
+    .replace(/\[MATERI\]/g, v.materi)
+    .replace(/\[GURU\]/g, v.guru)
+    .replace(/\[TEMAN\]/g, v.teman);
 }
-function fill(tmpl, mapel, konteks){
-  return tmpl.replace(/\{mapel\}/g, mapel).replace(/\{konteks\}/g, konteks);
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
 }
 function countWords(s){
   return s.replace(/[.,]/g," ").trim().split(/\s+/).filter(Boolean).length;
 }
-function qualityNote(text, lvl){
+function qualityNote(text, lvl, arah){
+  const panjang = countWords(text) > 12
+    ? "Kalimat agak panjang — pertimbangkan untuk diringkas."
+    : "Panjang kalimat sesuai untuk siswa SD.";
+  if(arah === "unfavorable"){
+    const base = {
+      mudah:  "Butir negatif ringan; menyetujui menandakan minat rendah.",
+      sedang: "Butir negatif tingkat sedang; sebaran jawaban diharapkan bervariasi.",
+      tinggi: "Butir negatif kuat; menjangkau siswa dengan minat sangat rendah."
+    }[lvl];
+    return base + " Skor dibalik (4↔1, 3↔2) saat analisis. " + panjang + " Butir negatif rawan disalahpahami siswa SD — uji keterbacaan & item fit.";
+  }
   const base = {
     mudah:  "Pernyataan umum; banyak siswa cenderung setuju. Jangan terlalu banyak butir mudah agar separasi tidak menurun.",
     sedang: "Mengukur minat yang lebih nyata; sebaran jawaban diharapkan bervariasi.",
     tinggi: "Menuntut minat kuat; persentase setuju cenderung lebih rendah dan menjangkau ujung atas skala."
   }[lvl];
-  const panjang = countWords(text) > 12
-    ? "Kalimat agak panjang — pertimbangkan untuk diringkas."
-    : "Panjang kalimat sesuai untuk siswa SD.";
   return base + " " + panjang + " Tetap perlu diuji empiris (validitas, item fit).";
 }
 
@@ -425,29 +665,57 @@ function generate(){
   if(!mapel){ showError("Mohon isi nama mata pelajaran terlebih dahulu."); return; }
   if(!kelas){ showError("Mohon isi kelas siswa terlebih dahulu."); return; }
 
-  const konteks = buildKonteks(mapel, objek);
+  const arah = (document.querySelector("#arahSeg .seg-btn.active") || {}).dataset
+    ? document.querySelector("#arahSeg .seg-btn.active").dataset.arah : "favorable";
+  const isMix = arah === "mix";
+  const jenisTeks = isMix ? "Campuran 50% positif / 50% negatif"
+    : (arah === "unfavorable" ? "Unfavorable (negatif)" : "Favorable (positif)");
 
-  // Round-robin level-major: distribusi seimbang antar dimensi
+  const konteksVals = {
+    mapel: mapel,
+    materi: objek || mapel,   // jika materi kosong, rujuk ke mata pelajaran
+    guru: "guru",
+    teman: "teman"
+  };
+
+  // Round-robin level-major untuk menghitung kuota tiap kombinasi (distribusi seimbang antar dimensi)
   const combos = [];
   for(const lvl of LEVELS){
-    for(let d=0; d<DIMENSI.length; d++) combos.push({ d, lvl });
+    for(let d=0; d<DIMENSI.length; d++) combos.push({ d, lvl, n:0 });
   }
+  for(let i=0;i<jumlah;i++) combos[i % combos.length].n++;
 
+  // Pilih template acak (tanpa pengulangan) dari tiap kombinasi.
+  // Untuk mix, penugasan dilakukan dalam urutan dimensi→tingkat agar positif/negatif
+  // berselang di dalam tiap dimensi (keseimbangan per dimensi maksimal).
+  const assignOrder = combos.slice().sort((a,b)=> (a.d-b.d) || (LEVEL_ORDER[a.lvl]-LEVEL_ORDER[b.lvl]));
   const raw = [];
-  for(let i=0;i<jumlah;i++){
-    const c = combos[i % combos.length];
-    const tIdx = Math.floor(i / combos.length);
-    const pool = DIMENSI[c.d].butir[c.lvl];
-    const tmpl = pool[tIdx % pool.length];
-    raw.push({ d:c.d, lvl:c.lvl, tmpl });
+  let extraToFav = true; // untuk mix: kuota ganjil bergiliran ke positif/negatif agar total tetap 50/50
+  for(const c of assignOrder){
+    if(c.n === 0) continue;
+    if(isMix){
+      let favN = Math.floor(c.n/2), negN = Math.floor(c.n/2);
+      if(c.n % 2 === 1){ if(extraToFav) favN++; else negN++; extraToFav = !extraToFav; }
+      shuffle(DIMENSI[c.d].butir[c.lvl]).slice(0, favN)
+        .forEach(tmpl => raw.push({ d:c.d, lvl:c.lvl, tmpl, arah:"favorable" }));
+      shuffle(BANK_NEG[c.d][c.lvl]).slice(0, negN)
+        .forEach(tmpl => raw.push({ d:c.d, lvl:c.lvl, tmpl, arah:"unfavorable" }));
+    } else {
+      const pool = arah === "unfavorable" ? BANK_NEG[c.d][c.lvl] : DIMENSI[c.d].butir[c.lvl];
+      shuffle(pool).slice(0, Math.min(c.n, pool.length))
+        .forEach(tmpl => raw.push({ d:c.d, lvl:c.lvl, tmpl, arah }));
+    }
   }
 
-  // Urutkan tampilan: per dimensi, lalu per tingkat
-  raw.sort((a,b)=> (a.d-b.d) || (LEVEL_ORDER[a.lvl]-LEVEL_ORDER[b.lvl]));
+  // Urutkan tampilan: per dimensi, lalu tingkat, lalu arah (positif dulu)
+  const arahOrder = { favorable:0, unfavorable:1 };
+  raw.sort((a,b)=> (a.d-b.d) || (LEVEL_ORDER[a.lvl]-LEVEL_ORDER[b.lvl]) || (arahOrder[a.arah]-arahOrder[b.arah]));
 
+  let nFav = 0, nNeg = 0;
   const items = raw.map((r,idx)=>{
     const dim = DIMENSI[r.d];
-    const text = fill(r.tmpl, mapel, konteks);
+    const text = fill(r.tmpl, konteksVals);
+    if(r.arah === "unfavorable") nNeg++; else nFav++;
     return {
       no: idx+1,
       dimensi: dim.nama,
@@ -455,13 +723,18 @@ function generate(){
       tingkat: r.lvl,
       tingkatLabel: LEVEL_LABEL[r.lvl],
       pernyataan: text,
-      arah: "Favorable (+)",
-      catatan: qualityNote(text, r.lvl)
+      arah: r.arah === "unfavorable" ? "Unfavorable (−)" : "Favorable (+)",
+      catatan: qualityNote(text, r.lvl, r.arah)
     };
   });
 
   LAST = {
-    meta: { mapel, kelas, objek, jumlah, skala: SKALA_TEKS, tanggal: new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"}) },
+    meta: {
+      mapel, kelas, objek, jumlah, arah, jenis: jenisTeks,
+      komposisi: isMix ? (nFav + " positif · " + nNeg + " negatif") : null,
+      skala: skalaTeks(arah), skalaSingkat: skalaSingkat(arah),
+      tanggal: new Date().toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})
+    },
     items
   };
 
@@ -471,14 +744,46 @@ function generate(){
 function render(data){
   // Meta
   const m = data.meta;
-  $("metaBox").innerHTML = [
+  const metaRows = [
     ["Mata pelajaran", m.mapel],
     ["Kelas", m.kelas],
     ["Materi pembelajaran", m.objek || "—"],
     ["Jumlah butir", m.jumlah + " butir"],
-    ["Skala", "4 tingkat (Likert)"],
-    ["Tanggal", m.tanggal]
-  ].map(([k,v])=>`<div><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join("");
+    ["Jenis butir", m.jenis]
+  ];
+  if(m.komposisi) metaRows.push(["Komposisi", m.komposisi]);
+  metaRows.push(["Skala", m.skalaSingkat], ["Tanggal", m.tanggal]);
+  $("metaBox").innerHTML = metaRows
+    .map(([k,v])=>`<div><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join("");
+
+  // Legenda dinamis sesuai arah butir
+  const legenda = m.arah === "unfavorable"
+    ? [
+        ["var(--mudah)",  "Mudah — pernyataan negatif ringan"],
+        ["var(--sedang)", "Sedang — ketidaktertarikan yang lebih nyata"],
+        ["var(--tinggi)", "Tinggi — penolakan / minat sangat rendah"]
+      ]
+    : m.arah === "mix"
+    ? [
+        ["var(--mudah)",  "Mudah — pernyataan paling ringan"],
+        ["var(--sedang)", "Sedang — tingkat menengah"],
+        ["var(--tinggi)", "Tinggi — pernyataan paling kuat (lihat Arah Butir)"]
+      ]
+    : [
+        ["var(--mudah)",  "Mudah disetujui — pernyataan umum &amp; ringan"],
+        ["var(--sedang)", "Sedang — minat yang lebih nyata"],
+        ["var(--tinggi)", "Tinggi — minat kuat (tetap tertarik meski sulit)"]
+      ];
+  $("legendBox").innerHTML = legenda
+    .map(([c,t])=>`<span><i class="dot" style="background:${c}"></i> ${t}</span>`).join("");
+
+  // Catatan arah pada narasi
+  $("arahNote").innerHTML =
+    m.arah === "unfavorable"
+      ? "Angket ini berisi <strong>butir negatif (unfavorable)</strong>. Pada butir negatif, jawaban <em>setuju</em> menunjukkan minat yang rendah, sehingga skornya perlu <strong>dibalik (4↔1, 3↔2)</strong> sebelum dianalisis. Untuk siswa SD, butir negatif rawan disalahpahami; sebaiknya diuji keterbacaannya dan dipakai bersama butir positif secara seimbang."
+    : m.arah === "mix"
+      ? "Angket ini <strong>campuran 50% butir positif dan 50% butir negatif</strong>, seimbang pada setiap dimensi dan tingkat. Lihat kolom <em>Arah Butir</em>: butir <strong>Unfavorable (−)</strong> harus <strong>dibalik skornya (4↔1, 3↔2)</strong> sebelum dianalisis, sedangkan butir <strong>Favorable (+)</strong> diskor langsung. Pencampuran membantu mengurangi kecenderungan menjawab asal setuju, namun untuk siswa SD pastikan keterbacaan butir negatif diuji."
+      : "Angket ini berisi <strong>butir positif (favorable)</strong>. Jawaban <em>setuju</em> menunjukkan minat yang lebih tinggi.";
 
   // Tabel
   $("angketBody").innerHTML = data.items.map(it=>`
@@ -511,7 +816,8 @@ function rowsOf(data){
 }
 function fileBase(data){
   const mp = (data.meta.mapel||"angket").replace(/[^\w\u00C0-\u024F ]/g,"").trim().replace(/\s+/g,"_");
-  return `Angket_Minat_${mp}_${data.meta.jumlah}butir`;
+  const ar = data.meta.arah === "unfavorable" ? "Negatif" : (data.meta.arah === "mix" ? "Campuran" : "Positif");
+  return `Angket_Minat_${mp}_${ar}_${data.meta.jumlah}butir`;
 }
 function download(filename, content, mime){
   const blob = new Blob([content], {type:mime});
@@ -531,7 +837,7 @@ function copyClipboard(){
   const lines = [];
   lines.push(`Angket Minat Belajar Siswa`);
   lines.push(`Mata pelajaran: ${m.mapel}\tKelas: ${m.kelas}\tMateri: ${m.objek || "-"}`);
-  lines.push(`Skala: ${m.skala}`);
+  lines.push(`Jenis butir: ${m.jenis}${m.komposisi ? " ("+m.komposisi+")" : ""}\tSkala: ${m.skala}`);
   lines.push("");
   lines.push(HEADERS.join("\t"));
   rowsOf(LAST).forEach(r=>lines.push(r.map(safe).join("\t")));
@@ -568,6 +874,8 @@ function downloadCsv(){
   rows.push(["Kelas", m.kelas]);
   rows.push(["Materi pembelajaran", m.objek || "-"]);
   rows.push(["Jumlah butir", m.jumlah]);
+  rows.push(["Jenis butir", m.jenis]);
+  if(m.komposisi) rows.push(["Komposisi", m.komposisi]);
   rows.push(["Skala", m.skala]);
   rows.push(["Tanggal", m.tanggal]);
   rows.push([]);
@@ -611,11 +919,13 @@ function downloadDoc(){
   <h1>Angket Minat Belajar Siswa</h1>
   <p class="sub">
     Mata pelajaran: <b>${esc(m.mapel)}</b> &nbsp;|&nbsp; Kelas: <b>${esc(m.kelas)}</b> &nbsp;|&nbsp; Materi: <b>${esc(m.objek||"-")}</b><br>
-    Jumlah butir: ${m.jumlah} &nbsp;|&nbsp; Skala: ${esc(m.skala)} &nbsp;|&nbsp; Tanggal: ${esc(m.tanggal)}
+    Jumlah butir: ${m.jumlah} &nbsp;|&nbsp; Jenis butir: <b>${esc(m.jenis)}</b>${m.komposisi ? " ("+esc(m.komposisi)+")" : ""} &nbsp;|&nbsp; Skala: ${esc(m.skala)} &nbsp;|&nbsp; Tanggal: ${esc(m.tanggal)}
   </p>
   <table><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>
   <div class="narasi">
     <p>${esc(NARASI)}</p>
+    ${m.arah === "unfavorable" ? '<p style="color:#555">Butir bersifat negatif (unfavorable): jawaban setuju menandakan minat rendah, sehingga skor perlu dibalik (4&harr;1, 3&harr;2) sebelum dianalisis.</p>' : ''}
+    ${m.arah === "mix" ? '<p style="color:#555">Angket campuran 50% positif + 50% negatif (seimbang tiap dimensi &amp; tingkat). Butir negatif (kolom Arah Butir = Unfavorable) perlu dibalik skornya (4&harr;1, 3&harr;2) sebelum dianalisis.</p>' : ''}
     <p style="color:#555">Tingkat mudah/sedang/tinggi menunjukkan kemungkinan siswa menyetujui pernyataan, bukan tingkat kesulitan soal. Validitas, reliabilitas, separasi, dan kecocokan butir sebaiknya diuji dengan data responden (mis. analisis Rasch/RASA).</p>
   </div>
 </body></html>`;
@@ -632,6 +942,7 @@ function reset(){
   $("jumlah").value="24";
   $("mapelLain").value="";
   $("mapelLain").classList.remove("show");
+  setArah("favorable");
   $("output").classList.remove("show");
   $("angketBody").innerHTML=""; $("metaBox").innerHTML="";
   ["btnCopy","btnCsv","btnDoc"].forEach(id=>$(id).disabled=true);
@@ -641,6 +952,35 @@ function reset(){
 }
 
 /* ---------- Event binding ---------- */
+function renderScale(arah){
+  const pts = arah === "unfavorable"
+    ? [["1","Sangat Setuju"],["2","Setuju"],["3","Tidak Setuju"],["4","Sangat Tidak Setuju"]]
+    : [["4","Sangat Setuju"],["3","Setuju"],["2","Tidak Setuju"],["1","Sangat Tidak Setuju"]];
+  $("scalePts").innerHTML = pts.map(([n,l])=>`<span class="pt"><b>${n}</b> ${l}</span>`).join("");
+  const cap = $("scaleCap");
+  if(arah === "unfavorable"){
+    cap.className = "scale-cap neg";
+    cap.innerHTML = "Skala dibalik untuk butir negatif: <em>Sangat Setuju = 1</em>, <em>Sangat Tidak Setuju = 4</em> (setuju = minat rendah).";
+  } else if(arah === "mix"){
+    cap.className = "scale-cap";
+    cap.innerHTML = "Skala di atas berlaku untuk butir <strong>positif</strong> (Sangat Setuju = 4). Untuk butir <strong>negatif</strong>, skor <strong>dibalik</strong> (Sangat Setuju = 1 … Sangat Tidak Setuju = 4). Penyekoran mengikuti kolom <em>Arah Butir</em>.";
+  } else {
+    cap.className = "scale-cap";
+    cap.innerHTML = "Skala ini untuk butir positif: <em>Sangat Setuju = 4</em>. Untuk butir negatif, skor dibalik.";
+  }
+}
+function setArah(arah){
+  document.querySelectorAll("#arahSeg .seg-btn").forEach(b=>{
+    const on = b.dataset.arah === arah;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-checked", on ? "true" : "false");
+  });
+  renderScale(arah);
+}
+document.querySelectorAll("#arahSeg .seg-btn").forEach(b=>{
+  b.addEventListener("click",()=>setArah(b.dataset.arah));
+});
+renderScale("favorable"); // tampilan awal
 $("mapel").addEventListener("change",()=>toggleExtra("mapel","mapelLain"));
 $("btnGenerate").addEventListener("click",generate);
 $("btnCopy").addEventListener("click",copyClipboard);
